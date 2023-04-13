@@ -3,7 +3,6 @@ const { Alchemy, Network, Wallet, Utils } = require("alchemy-sdk");
 const dotenv = require("dotenv");
 dotenv.config();
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const API_KEY = process.env.API_KEY
 
 // Configures the Alchemy SDK
@@ -14,12 +13,33 @@ const config = {
 
 // Creates an Alchemy object instance with the config to use for making requests
 const alchemy = new Alchemy(config);
-const wallet = new Wallet(PRIVATE_KEY);
 
-const execute = async () => {
+const amount = 0.001;
+
+// .envの中のACCOUNT[num]_PRIVATE_KEYのキーを全て抜き出す
+const pluckPrivateKeyViaEnv = (env) => {
+    const pkeyEnvKeys = Object.keys(env).filter((key) => {
+        return key.match(/ACCOUNT[1-9]|[1-4][0-9]_PRIVATE_KEY/)
+    });
+    return pkeyEnvKeys;
+}
+
+
+/**
+ * .envのキーがCCOUNT[num]_PRIVATE_KEYのアカウント全てからToに同じ数量のMATICを送付する
+ */
+const main = () => {
+    const pkeyEnvKeys = pluckPrivateKeyViaEnv(process.env);
+
+    for (const pKey of pkeyEnvKeys) {
+        sendTransaction(new Wallet(process.env[pKey]));
+    }
+}
+
+const sendTransaction = async (wallet) => {
     const transaction = {
         to: "0x6e2d241c2D136004D6e192CDcEA066251F886349",
-        value: Utils.parseEther("0.001"),
+        value: Utils.parseEther(amount.toString()),
         gasLimit: "21000",
         maxPriorityFeePerGas: Utils.parseUnits("5", "gwei"),
         maxFeePerGas: Utils.parseUnits("20", "gwei"),
@@ -36,5 +56,5 @@ const execute = async () => {
 
 
 (async () => {
-    await execute();
+    main()
 })();
